@@ -21,6 +21,8 @@ import PIL.Image
 from six import BytesIO
 
 
+__version__ = '0.1dev0'
+
 logger = logging.getLogger(__name__)
 
 
