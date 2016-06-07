@@ -45,6 +45,7 @@ setup(
     license='Apache License 2.0',
     description='The facial recognition',
     long_description=read('README.rst'),
+    url='https://github.com/TakesxiSximada/facedetection',
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: Apache Software License',
