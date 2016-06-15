@@ -44,7 +44,6 @@ setup(
     version=find_version('src'),
     license='Apache License 2.0',
     description='The facial recognition',
-    url='https://github.com/TakesxiSximada/facedetection',
     long_description=read('README.rst'),
     url='https://github.com/TakesxiSximada/facedetection',
     classifiers=[
