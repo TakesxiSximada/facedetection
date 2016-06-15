@@ -28,13 +28,13 @@ logger = logging.getLogger(__name__)
 
 
 def get_file_name(file_or_url):
-    if isinstance(file_or_url, six.string_type):
+    if isinstance(file_or_url, six.string_types):
         return file_or_url
     return getattr(file_or_url, 'name', str(file_or_url))
 
 
 def is_localfile(uri):
-    if isinstance(uri, six.string_type):
+    if isinstance(uri, six.string_types):
         url_obj = urllib.parse.urlparse(uri)
         return url_obj.scheme == ''
     return True
@@ -46,12 +46,16 @@ def is_gcs_image_uri(uri):
     return url_obj.scheme == 'gs'
 
 
-def get_encoded_image(file_or_path):
+def read_file(file_or_path):
     if hasattr(file_or_path, 'read'):
-        buf = file_or_path.read()
+        return file_or_path.read()
     else:
         with open(file_or_path, 'rb') as fp:
-            buf = fp.read()
+            return fp.read()
+
+
+def get_encoded_image(file_or_path):
+    buf = read_file(file_or_path)
     return base64.b64encode(buf).decode()
 
 
@@ -347,8 +351,7 @@ class MSProjectoxfordDetection:
 
     def build_payload_for_localfile(self, path):
         """Create a request payload for local image file"""
-        with open(path, 'rb') as fp:
-            return fp.read()
+        return read_file(path)
 
     def build_payload_for_url(self, url):
         """Create a request payload specify the image URL
