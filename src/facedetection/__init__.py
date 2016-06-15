@@ -293,13 +293,13 @@ class MSProjectoxfordDetection:
     def __init__(self, api_token):
         self.api_token = api_token
 
-    def __call__(self, url_or_path):
-        is_local = is_localfile(url_or_path)
+    def __call__(self, file_or_url):
+        is_local = is_localfile(file_or_url)
         headers = self.build_headers(is_local)
-        payload = self.build_payload(url_or_path, is_local)
+        payload = self.build_payload(file_or_url, is_local)
         data = self.request(headers=headers, payload=payload)
         create_result = MSProjectoxfordDetectionResultFactory()
-        name = get_file_name(url_or_path)
+        name = get_file_name(file_or_url)
         return create_result(name, data)
 
     def request(self, headers, payload):
