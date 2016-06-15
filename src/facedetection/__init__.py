@@ -22,7 +22,7 @@ import six
 from six import BytesIO
 
 
-__version__ = '1.0.dev1'
+__version__ = '1.0rc1'
 
 logger = logging.getLogger(__name__)
 
