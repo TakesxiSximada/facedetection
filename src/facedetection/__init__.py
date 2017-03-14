@@ -5,6 +5,7 @@ import base64
 import logging
 import argparse
 import urllib.parse
+from collections import OrderedDict
 
 import furl
 import requests
@@ -291,11 +292,19 @@ class MSProjectoxfordDetectionError(Exception):
 
 @implementer(IDetection)
 class MSProjectoxfordDetection:
-    """MS Recongnition API face recognition"""
-    endpoint = 'https://api.projectoxford.ai/face/v1.0/detect?returnFaceId=true&returnFaceLandmarks=true'  # noqa
+    """MS Recongnition API face recognition."""
+    endpoint = 'https://westus.api.cognitive.microsoft.com/face/v1.0/detect'
 
     def __init__(self, api_token):
         self.api_token = api_token
+
+        self.returnFaceId = True
+        self.returnFaceLandmarks = False
+
+        # comma-separated string like "returnFaceAttributes=age,gender".
+        # Supported face attributes include age, gender, headPose, smile, facialHair, and glasses.
+        # Note that each face attribute analysis has additional computational and time cost.
+        self.returnFaceAttributes = None
 
     def __call__(self, file_or_url):
         is_local = is_localfile(file_or_url)
@@ -306,9 +315,19 @@ class MSProjectoxfordDetection:
         name = get_file_name(file_or_url)
         return create_result(name, data)
 
+    def build_endpiont(self):
+        url_parts = list(urllib.parse.urlparse(self.endpoint))
+        query = OrderedDict(urllib.parse.parse_qsl(url_parts[4]))
+        query['returnFaceId'] = "true" if self.returnFaceId else "false"
+        query['returnFaceLandmarks'] = "false" if not self.returnFaceLandmarks else "true"
+        if self.returnFaceAttributes and isinstance(self.returnFaceAttributes, list):
+            query['returnFaceAttributes'] = ",".join(self.returnFaceAttributes)
+        url_parts[4] = urllib.parse.urlencode(query)
+        return urllib.parse.urlunparse(url_parts)
+
     def request(self, headers, payload):
         """Send request to detection service api"""
-        res = requests.post(self.endpoint, headers=headers, data=payload)
+        res = requests.post(self.build_endpiont(), headers=headers, data=payload)
         if res.status_code != 200:
             raise MSProjectoxfordDetectionError(
                 'detection failed: status={}, reason={}, content={}'.format(
