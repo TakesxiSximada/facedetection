@@ -20,7 +20,6 @@ wheel:
 testpypi: wheel
 	@# Register to test pypi
 
-	twine register dist/*.whl -r testpypi
 	twine upload dist/*.whl -r testpypi
 
 
