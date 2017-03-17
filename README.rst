@@ -10,7 +10,7 @@ Install
 
    $ pip install facedetection
 
-How to user it
+How to use it
 --------------
 
 Supported API

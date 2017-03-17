@@ -18,17 +18,26 @@ import oauth2client.client
 import googleapiclient.discovery
 import PIL.Image
 
+import six
 from six import BytesIO
 
 
-__version__ = '0.1.dev1'
+__version__ = '1.0rc1'
 
 logger = logging.getLogger(__name__)
 
 
+def get_file_name(file_or_url):
+    if isinstance(file_or_url, six.string_types):
+        return file_or_url
+    return getattr(file_or_url, 'name', str(file_or_url))
+
+
 def is_localfile(uri):
-    url_obj = urllib.parse.urlparse(uri)
-    return url_obj.scheme == ''
+    if isinstance(uri, six.string_types):
+        url_obj = urllib.parse.urlparse(uri)
+        return url_obj.scheme == ''
+    return True
 
 
 def is_gcs_image_uri(uri):
@@ -37,10 +46,17 @@ def is_gcs_image_uri(uri):
     return url_obj.scheme == 'gs'
 
 
-def get_encoded_image(path):
-    with open(path, 'rb') as fp:
-        buf = fp.read()
-        return base64.b64encode(buf).decode()
+def read_file(file_or_path):
+    if hasattr(file_or_path, 'read'):
+        return file_or_path.read()
+    else:
+        with open(file_or_path, 'rb') as fp:
+            return fp.read()
+
+
+def get_encoded_image(file_or_path):
+    buf = read_file(file_or_path)
+    return base64.b64encode(buf).decode()
 
 
 class ICoord(Interface):
@@ -189,12 +205,13 @@ class GoogleVisionAPIFaceDetection:
         )
         self.image_api = self.service.images()
 
-    def __call__(self, url_or_path):
-        is_local = is_localfile(url_or_path)
-        payload = self.build_payload(url_or_path, is_local)
+    def __call__(self, file_or_url):
+        is_local = is_localfile(file_or_url)
+        payload = self.build_payload(file_or_url, is_local)
         data = self.request(payload=payload)
         create_result = GoogleVisionAPIFaceDetectionResultFactory()
-        return create_result(url_or_path, data)
+        name = get_file_name(file_or_url)
+        return create_result(name, data)
 
     def request(self, payload):
         """Send request to detection service api"""
@@ -206,12 +223,12 @@ class GoogleVisionAPIFaceDetection:
         func = self.build_payload_for_localfile if is_localfile else self.build_payload_for_url
         return func(url_or_path)
 
-    def build_payload_for_localfile(self, path):
+    def build_payload_for_localfile(self, file_or_path):
         """Create a request payload for local image file"""
         return {
             'requests': [{
                 'image': {
-                    'content': get_encoded_image(path),
+                    'content': get_encoded_image(file_or_path),
                 },
                 'features': [{
                     'type': 'FACE_DETECTION',
@@ -280,13 +297,14 @@ class MSProjectoxfordDetection:
     def __init__(self, api_token):
         self.api_token = api_token
 
-    def __call__(self, url_or_path):
-        is_local = is_localfile(url_or_path)
+    def __call__(self, file_or_url):
+        is_local = is_localfile(file_or_url)
         headers = self.build_headers(is_local)
-        payload = self.build_payload(url_or_path, is_local)
+        payload = self.build_payload(file_or_url, is_local)
         data = self.request(headers=headers, payload=payload)
         create_result = MSProjectoxfordDetectionResultFactory()
-        return create_result(url_or_path, data)
+        name = get_file_name(file_or_url)
+        return create_result(name, data)
 
     def request(self, headers, payload):
         """Send request to detection service api"""
@@ -333,8 +351,7 @@ class MSProjectoxfordDetection:
 
     def build_payload_for_localfile(self, path):
         """Create a request payload for local image file"""
-        with open(path, 'rb') as fp:
-            return fp.read()
+        return read_file(path)
 
     def build_payload_for_url(self, url):
         """Create a request payload specify the image URL
